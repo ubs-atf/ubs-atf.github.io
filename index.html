@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kafedra davomat tizimi</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#6a737d;--bd:#dfe3e8;--ac:#1a6ef0;--ok:#1a8a4a;--wa:#c27a00;--er:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#14171a;--card:#1d2126;--tx:#e8eaed;--mu:#9aa3ad;--bd:#2e353c;--ac:#5b9bff;--ok:#4cc57c;--wa:#e0a030;--er:#ff6b5b;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+.w{max-width:960px;margin:0 auto;padding:16px}h1{font-size:20px;margin:4px 0 12px}h2{font-size:16px;margin:0 0 12px}
+button,select,input{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:9px 10px;width:100%}
+button{cursor:pointer;width:auto}button.p{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mu);margin-bottom:3px}
+.t{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}th{color:var(--mu);font-size:12px}
+.b{padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid var(--bd)}
+.late{color:var(--wa)}.ok{color:var(--ok)}.mu{color:var(--mu)}.er{color:var(--er)}
+.msg{border-left:3px solid var(--ac);padding:6px 10px;margin:6px 0;background:var(--bg);border-radius:0 8px 8px 0;font-size:13px}
+.hide{display:none}.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.row>div{min-width:140px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ok);color:#fff;padding:10px 16px;border-radius:10px;display:none}
+@media print{.noprint{display:none!important}body{background:#fff;color:#000}}
+</style></head><body><div class="w">
+
+<div id="login" class="c" style="max-width:380px;margin:60px auto">
+ <h1>🎓 Kafedra davomat tizimi</h1>
+ <label>Parol</label><input id="pw" type="password" onkeydown="if(event.key==='Enter')doLogin()">
+ <p><button class="p" onclick="doLogin()">Kirish</button> <span id="lerr" class="er"></span></p>
+</div>
+
+<div id="app" class="hide">
+ <div class="top"><h1 id="ttl"></h1><button class="noprint" onclick="logout()">Chiqish</button></div>
+
+ <div id="vH" class="hide">
+  <div class="c"><h2>Kelish / ketish vaqtini belgilash</h2>
+   <div class="g">
+    <div><label>Xodim</label><select id="emp"></select></div>
+    <div><label>Sana</label><input type="date" id="dt"></div>
+    <div><label>Holat</label><select id="mode"><option value="in">Ishga keldi</option><option value="out">Ishdan ketdi</option></select></div>
+    <div><label>Soat</label><select id="hh"></select></div>
+    <div><label>Minut</label><select id="mm"></select></div>
+   </div>
+   <p><button class="p" onclick="mark()">Yuborish</button></p>
+   <div class="mu" style="font-size:13px">Yuborilgach maʼlumot Kadrlar boʻlimiga va xodimning Telegram botiga avtomatik ketadi.</div>
+  </div>
+  <div class="c"><h2>Tanlangan sana holati</h2><div class="t"><table id="today"></table></div></div>
+ </div>
+
+ <div id="vK" class="hide">
+  <div class="c"><div class="row">
+   <div><label>Oy</label><input type="month" id="mon" onchange="renderK()"></div>
+   <button class="noprint" onclick="xlsx()">⬇ Excel hisobot</button>
+   <button class="noprint" onclick="print()">🖨 Chop etish / PDF</button>
+  </div></div>
+  <div class="c"><h2 id="repT"></h2><div class="t"><table id="rep"></table></div></div>
+  <div class="c noprint"><h2>Kunlik tafsilot</h2><div class="row"><div><label>Xodim</label><select id="emp2" onchange="renderDet()"></select></div></div><div class="t"><table id="det"></table></div></div>
+  <div class="c noprint"><h2>Xodimlar va Telegram ulanishi</h2><div class="t"><table id="emps"></table></div>
+   <h2 style="margin-top:16px">Yangi xodim</h2>
+   <div class="row"><div><label>F.I.Sh.</label><input id="nn"></div><div><label>Lavozimi</label><input id="np"></div><button onclick="addEmp()">Qoʻshish</button></div></div>
+  <div class="c noprint"><h2>Yuborilgan xabarlar jurnali</h2><div id="log"></div></div>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id),p2=n=>String(n).padStart(2,'0');
+let PW=sessionStorage.getItem('pw')||'',ROLE=sessionStorage.getItem('role')||'',CFG={},EMPS=[],REP=[];
+const fmt=m=>Math.floor(m/60)+' soat '+p2(m%60)+' daq',dstr=d=>d.split('-').reverse().join('.');
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())};
+function toast(t,bad){const e=$('toast');e.textContent=t;e.style.background=bad?'var(--er)':'var(--ok)';e.style.display='block';setTimeout(()=>e.style.display='none',3000)}
+async function api(path,opt={}){
+ const r=await fetch('/api'+path,{...opt,headers:{'Content-Type':'application/json','X-Password':PW}});
+ if(r.status===401){if(ROLE)logout();throw new Error('Parol notoʻgʻri')}
+ if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Xatolik')}
+ return r}
+const post=(p,b)=>api(p,{method:'POST',body:JSON.stringify(b)});
+async function doLogin(){PW=$('pw').value;try{const j=await(await post('/login',{})).json();ROLE=j.role;CFG=j;sessionStorage.setItem('pw',PW);sessionStorage.setItem('role',ROLE);start()}catch(e){$('lerr').textContent=e.message}}
+function logout(){sessionStorage.clear();location.reload()}
+async function start(){
+ $('login').classList.add('hide');$('app').classList.remove('hide');
+ $('ttl').textContent=ROLE==='head'?'👤 Kafedra mudiri':'🗂 Kadrlar boʻlimi';
+ $('hh').innerHTML=Array.from({length:24},(_,i)=>`<option value="${i}">${p2(i)}</option>`).join('');
+ $('mm').innerHTML=Array.from({length:60},(_,i)=>`<option value="${i}">${p2(i)}</option>`).join('');
+ $('hh').value=9;$('dt').value=today();$('mon').value=today().slice(0,7);
+ $('dt').onchange=renderH;
+ await loadEmps();
+ if(ROLE==='head'){$('vH').classList.remove('hide');renderH()}else{$('vK').classList.remove('hide');renderK()}
+}
+async function loadEmps(){EMPS=await(await api('/employees')).json();const o=EMPS.map(e=>`<option value="${e.id}">${e.name} — ${e.pos}</option>`).join('');$('emp').innerHTML=o;$('emp2').innerHTML=o}
+async function mark(){
+ try{const j=await(await post('/attendance',{employee_id:+$('emp').value,day:$('dt').value,kind:$('mode').value,time:p2($('hh').value)+':'+p2($('mm').value)})).json();
+  toast('Yuborildi. Kadrlar: '+(j.hr_sent?'✅':'jurnalga')+' · Telegram: '+(j.telegram_sent?'✅':'❌ (bot ulanmagan)'));renderH()}
+ catch(e){toast(e.message,1)}}
+async function renderH(){
+ const rows=await(await api('/today?day='+$('dt').value)).json();
+ $('today').innerHTML='<tr><th>Xodim</th><th>Keldi</th><th>Ketdi</th><th>Ishlagan</th><th>Holat</th></tr>'+rows.map(r=>`<tr><td>${r.name}</td><td>${r.in||'—'}</td><td>${r.out||'—'}</td><td>${r.worked!=null?fmt(r.worked):'—'}</td><td>${!r.in?'<span class="b mu">Kelmagan</span>':r.late>0?'<span class="b late">Kechikdi '+r.late+' daq</span>':'<span class="b ok">Vaqtida</span>'}</td></tr>`).join('')}
+async function renderK(){
+ const m=$('mon').value;REP=await(await api('/report?month='+m)).json();
+ $('repT').textContent='Oylik hisobot — '+m.split('-').reverse().join('.');
+ $('rep').innerHTML='<tr><th>Xodim</th><th>Ish kunlari</th><th>Jami ishlagan</th><th>Oʻrtacha/kun</th><th>Kechikish</th></tr>'+REP.map(r=>`<tr><td>${r.name}</td><td>${r.days}</td><td><b>${fmt(r.total)}</b></td><td>${r.days?fmt(r.avg):'—'}</td><td>${r.late}</td></tr>`).join('');
+ renderDet();
+ await loadEmps();
+ $('emps').innerHTML='<tr><th>F.I.Sh.</th><th>Lavozimi</th><th>Telegram</th><th>Ulanish kodi</th></tr>'+EMPS.map(e=>`<tr><td>${e.name}</td><td>${e.pos}</td><td>${e.linked?'<span class="ok">ulangan ✅</span>':'<span class="late">ulanmagan</span>'}</td><td>${e.linked?'—':'<b>'+e.code+'</b>'}</td></tr>`).join('');
+ const L=await(await api('/log')).json();
+ $('log').innerHTML=L.length?L.map(l=>`<div class="msg"><b>${l.to_whom}</b> ${l.delivered?'✅':'<span class="late">(yetkazilmadi)</span>'} · <span class="mu">${l.ts}</span><br>${l.text}</div>`).join(''):'<span class="mu">Hozircha xabar yoʻq</span>'}
+function renderDet(){const r=REP.find(x=>x.id==$('emp2').value);
+ $('det').innerHTML='<tr><th>Sana</th><th>Keldi</th><th>Ketdi</th><th>Ishlagan</th></tr>'+((r&&r.details)||[]).map(d=>`<tr><td>${dstr(d.day)}</td><td>${d.in||'—'}</td><td>${d.out||'—'}</td><td>${d.worked!=null?fmt(d.worked):'—'}</td></tr>`).join('')}
+async function addEmp(){const n=$('nn').value.trim();if(!n)return toast('F.I.Sh. kiriting',1);
+ try{const j=await(await post('/employees',{name:n,pos:$('np').value})).json();$('nn').value=$('np').value='';toast('Qoʻshildi. Ulanish kodi: '+j.code);renderK()}catch(e){toast(e.message,1)}}
+async function xlsx(){const m=$('mon').value;const b=await(await api('/report.xlsx?month='+m)).blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hisobot-'+m+'.xlsx';a.click()}
+if(PW&&ROLE){post('/login',{}).then(r=>r.json()).then(j=>{CFG=j;ROLE=j.role;start()}).catch(()=>{})}
+</script></div></body></html>
