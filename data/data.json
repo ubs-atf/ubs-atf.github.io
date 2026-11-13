@@ -1,1 +1,16 @@
-{"teachers":[],"articles":[],"events":[],"students":[]}
+{
+ "teachers": [
+  {
+   "id": 1794550763508,
+   "last": "Samandarov",
+   "first": "Shuxrat",
+   "middle": "Kamoliddinovich",
+   "degree": "PhD",
+   "bio": "Kimyo fanlari bo'yicha falsafa doktori",
+   "photo": "img/1794550763508.jpg"
+  }
+ ],
+ "articles": [],
+ "events": [],
+ "students": []
+}
