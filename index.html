@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aniq va tabiiy fanlar kafedrasi</title>
+<style>
+:root{--ink:#12263f;--teal:#1f7a8c;--ice:#eef4f7;--line:#cfdce4;--mut:#5b6b7b;--amb:#e3a82b}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 system-ui,"Segoe UI",Arial,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--ink);color:#fff;text-align:center;padding:26px 16px 0;border-bottom:5px solid;border-image:linear-gradient(90deg,#7b4bd1,#2f6fe0,#1fa88a,#e3c52b,#e8742c,#d6403a) 1}
+h1{margin:0 0 18px;font:600 clamp(24px,5vw,38px)/1.2 Georgia,serif}
+nav{display:flex;gap:2px;justify-content:center;flex-wrap:wrap}
+nav a{color:#c9d8e6;text-decoration:none;padding:11px 18px}
+nav a.on{color:#fff;box-shadow:inset 0 -3px var(--amb)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+main{max-width:1080px;margin:0 auto;padding:28px 16px 40px}
+section{display:none}section.on{display:block}
+h2{margin:0 0 18px;font:600 26px Georgia,serif}
+.m{color:var(--mut);font-size:14px}
+.ph{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--ice)}
+img.ph{display:block}
+div.ph{display:flex;align-items:center;justify-content:center;color:var(--teal);font:600 48px/1 Georgia,serif}
+.car{position:relative}
+.tr{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.tr::-webkit-scrollbar{display:none}
+.t{flex:0 0 min(250px,72%);scroll-snap-align:start;border:1px solid var(--line)}
+.t .b{padding:12px 14px 16px}
+.t h3{margin:0 0 2px;font:600 18px/1.25 Georgia,serif}
+.deg{color:var(--teal);font-weight:600;font-size:14px}
+.bio{margin:8px 0 0;font-size:14px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.bio.open{display:block}
+.arr{position:absolute;top:36%;z-index:2;width:42px;height:42px;border:0;border-radius:50%;background:var(--ink);color:#fff;font-size:22px;cursor:pointer}
+.arr.l{left:-8px}.arr.r{right:-8px}
+.ar{padding:14px 0;border-top:1px solid var(--line)}
+.tag{display:inline-block;margin-right:8px;padding:1px 10px;border-radius:10px;font-size:13px;background:var(--ice);color:var(--teal)}
+.ev{display:grid;grid-template-columns:170px 1fr;gap:18px;padding:18px 0;border-top:1px solid var(--line)}
+.ev .ph{aspect-ratio:4/3;margin-top:8px}
+.ev h3{margin:0 0 6px;font:600 20px/1.25 Georgia,serif}
+.ev p{margin:0;white-space:pre-line}
+.dt{font-weight:600;border-bottom:3px solid var(--amb);display:inline-block}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:22px}
+.s{text-align:center}
+.s .ph{aspect-ratio:1;border-radius:50%;margin-bottom:10px}
+.s b{display:block}
+.e{color:var(--mut)}
+footer{background:var(--ink);color:#c9d8e6;text-align:center;padding:18px 16px;font-size:14px}
+@media(max-width:560px){.ev{grid-template-columns:1fr}.arr.l{left:0}.arr.r{right:0}}
+</style></head><body>
+<header><h1>Aniq va tabiiy fanlar kafedrasi</h1><nav id="nav"></nav></header>
+<main>
+<section id="teachers"><h2>Kafedra oʻqituvchilari</h2>
+<div class="car"><button class="arr l" onclick="mv(-1)" aria-label="Oldingisi">‹</button><div class="tr" id="tr"></div><button class="arr r" onclick="mv(1)" aria-label="Keyingisi">›</button></div></section>
+<section id="articles"><h2>Ilmiy faoliyat</h2><div id="al"></div></section>
+<section id="events"><h2>Tadbirlardan lavhalar</h2><div id="el"></div></section>
+<section id="students"><h2>Iqtidorli talabalar</h2><div class="g" id="sl"></div></section>
+</main>
+<footer>© Aniq va tabiiy fanlar kafedrasi, University of Business and Science, Toshkent filiali</footer>
+<script>
+const N={teachers:'Oʻqituvchilar',articles:'Ilmiy faoliyat',events:'Tadbirlar',students:'Iqtidorli talabalar'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const full=t=>t?[t.last,t.first,t.middle].filter(Boolean).join(' '):'—';
+const ph=(p,n)=>p?`<img class="ph" src="${esc(p)}" alt="${esc(n)}" loading="lazy">`:`<div class="ph">${esc((n||'?').charAt(0))}</div>`;
+const dt=d=>(d||'').split('-').reverse().join('.');
+const none='<p class="e">Hozircha maʼlumot kiritilmagan.</p>';
+let D={teachers:[],articles:[],events:[],students:[]},hover=0;
+
+$('#nav').innerHTML=Object.keys(N).map(k=>`<a href="#${k}">${N[k]}</a>`).join('');
+function route(){const h=location.hash.slice(1),k=N[h]?h:'teachers';
+ document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==k));
+ document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash=='#'+k))}
+addEventListener('hashchange',route);route();
+
+function render(){
+ $('#tr').innerHTML=D.teachers.map(t=>`<div class="t">${ph(t.photo,t.last)}<div class="b"><h3>${esc(full(t))}</h3><div class="deg">${esc(t.degree)}</div>${t.bio?`<p class="bio">${esc(t.bio)}</p>`:''}</div></div>`).join('')||none;
+ $('#al').innerHTML=[...D.articles].reverse().map(a=>`<div class="ar"><span class="tag">${esc(a.type)}</span><b>${esc(a.title)}</b><div class="m">${esc(full(D.teachers.find(t=>t.id==a.teacherId)))} · ${esc(a.journal)}</div></div>`).join('')||none;
+ $('#el').innerHTML=[...D.events].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>`<div class="ev"><div><span class="dt">${dt(e.date)}</span>${e.photo?ph(e.photo,e.title):''}</div><div><h3>${esc(e.title)}</h3><p>${esc(e.text)}</p></div></div>`).join('')||none;
+ $('#sl').innerHTML=D.students.map(s=>`<div class="s">${ph(s.photo,s.last)}<b>${esc(s.last+' '+s.first)}</b><span class="m">${esc(s.group)}-guruh</span></div>`).join('')||none;
+}
+function mv(d){const t=$('#tr'),c=t.firstElementChild,w=c?c.offsetWidth+18:0;
+ if(d>0&&t.scrollLeft+t.clientWidth>=t.scrollWidth-4)t.scrollTo({left:0,behavior:'smooth'});
+ else if(d<0&&t.scrollLeft<4)t.scrollTo({left:t.scrollWidth,behavior:'smooth'});
+ else t.scrollBy({left:d*w,behavior:'smooth'})}
+$('.car').onmouseenter=()=>hover=1;$('.car').onmouseleave=()=>hover=0;
+if(!matchMedia('(prefers-reduced-motion:reduce)').matches)setInterval(()=>{if(!document.hidden&&!hover&&$('#teachers').classList.contains('on'))mv(1)},4500);
+document.addEventListener('click',e=>{if(e.target.classList.contains('bio'))e.target.classList.toggle('open')});
+
+fetch('data/data.json?v='+Math.floor(Date.now()/6e4)).then(r=>r.json()).then(d=>{D=Object.assign(D,d);render()})
+ .catch(()=>{$('main').insertAdjacentHTML('afterbegin','<p class="e">Maʼlumotlarni yuklab boʻlmadi. Sahifani yangilang.</p>')});
+</script></body></html>

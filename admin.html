@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin panel — Aniq va tabiiy fanlar kafedrasi</title>
+<style>
+body{margin:0;font:16px/1.5 system-ui,"Segoe UI",Arial,sans-serif;background:#eef4f7;color:#12263f}
+.w{max-width:820px;margin:0 auto;padding:16px}
+h1{margin:6px 0 14px;font:600 22px Georgia,serif}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{padding:9px 14px;border:1px solid #12263f;background:#fff;color:#12263f;border-radius:6px;cursor:pointer;font:inherit}
+.tabs button.on{background:#12263f;color:#fff}
+form,.box{background:#fff;padding:16px;border:1px solid #cfdce4;margin-bottom:14px}
+label{display:block;margin:12px 0 4px;font-weight:600;font-size:14px}
+input,select,textarea{width:100%;padding:9px;border:1px solid #9fb2c0;border-radius:6px;font:inherit;background:#fff}
+textarea{min-height:90px}
+.go{margin-top:16px;padding:10px 20px;border:0;border-radius:6px;background:#1f7a8c;color:#fff;font:inherit;cursor:pointer}
+.go:disabled{opacity:.5;cursor:wait}
+.out{background:#5b6b7b}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #e3eaef}
+.row button{flex:none;border:0;border-radius:6px;background:#c0392b;color:#fff;padding:6px 12px;cursor:pointer;font:inherit}
+#msg{display:none;padding:10px 12px;margin-bottom:12px;border-radius:6px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #e3a82b;outline-offset:1px}
+</style></head><body><div class="w">
+<h1>Admin panel: Aniq va tabiiy fanlar kafedrasi</h1>
+<div id="msg" role="status"></div>
+<div id="login" class="box"><label for="tok">GitHub token</label>
+<input id="tok" type="password" placeholder="github_pat_..." autocomplete="off">
+<button class="go" onclick="login()">Kirish</button></div>
+<div id="app" hidden><div class="tabs" id="tabs"></div><form id="frm"></form><div class="box" id="list"></div>
+<button class="go out" onclick="logout()">Chiqish</button></div>
+</div>
+<script>
+const O='ubs-atf',R='ubs-atf.github.io',API=`https://api.github.com/repos/${O}/${R}/contents/`;
+let T=localStorage.getItem('gh')||'',D,sha,cur='teachers';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const full=t=>t?[t.last,t.first,t.middle].filter(Boolean).join(' '):'—';
+const enc=s=>btoa(unescape(encodeURIComponent(s)));
+const dec=b=>decodeURIComponent(escape(atob(b.replace(/\s/g,''))));
+
+const S={
+ teachers:{t:'Oʻqituvchilar',f:[['last','Familiya'],['first','Ism'],['middle','Sharifi'],['degree','Ilmiy darajasi'],['bio','Qisqacha maʼlumot','area'],['photo','Rasm','file']],
+  l:x=>full(x)+' — '+(x.degree||'')},
+ articles:{t:'Ilmiy faoliyat',f:[['teacherId','Muallif','teacher'],['type','Turi',['Maqola','Tezis']],['title','Maqola yoki tezis nomi'],['journal','Jurnal yoki konferensiya nomi']],
+  l:x=>`[${x.type}] ${x.title} — ${full(D.teachers.find(t=>t.id==x.teacherId))}`},
+ events:{t:'Tadbirlar',f:[['date','Tadbir sanasi','date'],['title','Tadbir nomi'],['text','Matn','area'],['photo','Lavha (rasm)','file']],
+  l:x=>x.date+' — '+x.title},
+ students:{t:'Iqtidorli talabalar',f:[['last','Familiya'],['first','Ism'],['group','Guruh'],['photo','Rasm','file']],
+  l:x=>`${x.last} ${x.first} (${x.group})`}
+};
+const OPTIONAL=['bio','degree','middle'];
+
+function msg(t,ok){const m=$('#msg');m.style.display=t?'block':'none';m.textContent=t;m.style.background=ok?'#d9f2e1':'#fde0dc'}
+async function gh(p,o={}){
+ const r=await fetch(API+p,{...o,headers:{Authorization:'Bearer '+T,Accept:'application/vnd.github+json','Content-Type':'application/json'}});
+ const j=await r.json().catch(()=>({}));
+ if(!r.ok)throw new Error(r.status+(j.message?': '+j.message:''));
+ return j}
+async function load(){const j=await gh('data/data.json?ref=main');sha=j.sha;D=JSON.parse(dec(j.content));for(const k in S)D[k]=D[k]||[]}
+async function save(){const j=await gh('data/data.json',{method:'PUT',body:JSON.stringify({message:'Maʼlumot yangilandi',content:enc(JSON.stringify(D,null,1)),sha,branch:'main'})});sha=j.content.sha}
+function shrink(f){return new Promise((ok,no)=>{const i=new Image();
+ i.onload=()=>{const k=Math.min(1,900/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.82).split(',')[1])};
+ i.onerror=()=>no(new Error('Rasm formati qoʻllab-quvvatlanmaydi (JPG yoki PNG yuklang)'));i.src=URL.createObjectURL(f)})}
+async function up(f){const p='img/'+Date.now()+'.jpg';await gh(p,{method:'PUT',body:JSON.stringify({message:'Rasm qoʻshildi',content:await shrink(f),branch:'main'})});return p}
+
+async function login(){T=$('#tok').value.trim()||T;msg('Tekshirilmoqda...',1);
+ try{await load();localStorage.setItem('gh',T);$('#login').style.display='none';$('#app').hidden=false;msg('');show(cur)}
+ catch(e){$('#login').style.display='block';msg('Kirib boʻlmadi: '+e.message)}}
+function logout(){localStorage.removeItem('gh');location.reload()}
+
+function inp(n,t){const i=`id="f_${n}"`;
+ if(t=='area')return`<textarea ${i}></textarea>`;
+ if(t=='file')return`<input ${i} type="file" accept="image/*">`;
+ if(t=='date')return`<input ${i} type="date">`;
+ if(t=='teacher')return`<select ${i}>${D.teachers.map(x=>`<option value="${x.id}">${esc(full(x))}</option>`).join('')}</select>`;
+ if(Array.isArray(t))return`<select ${i}>${t.map(o=>`<option>${o}</option>`).join('')}</select>`;
+ return`<input ${i}>`}
+function show(k){cur=k;msg('');
+ $('#tabs').innerHTML=Object.keys(S).map(x=>`<button class="${x==k?'on':''}" onclick="show('${x}')">${S[x].t}</button>`).join('');
+ $('#frm').innerHTML=S[k].f.map(([n,l,t])=>`<label for="f_${n}">${l}</label>`+inp(n,t)).join('')+'<button class="go">Qoʻshish</button>';
+ $('#frm').onsubmit=add;list()}
+function list(){$('#list').innerHTML=`<b>${S[cur].t}: ${D[cur].length} ta</b>`+D[cur].map(x=>`<div class="row"><span>${esc(S[cur].l(x))}</span><button onclick="del(${x.id})">Oʻchirish</button></div>`).join('')}
+
+async function add(e){e.preventDefault();const it={id:Date.now()},b=e.target.querySelector('.go');
+ for(const [n,l,t] of S[cur].f){if(t=='file')continue;const v=$('#f_'+n).value.trim();it[n]=v;if(!v&&!OPTIONAL.includes(n))return msg(`"${l}" maydoni toʻldirilmagan`)}
+ if(cur=='articles')it.teacherId=+it.teacherId;
+ b.disabled=true;msg('Saqlanmoqda...',1);let p=0;
+ try{const f=$('#f_photo');if(f&&f.files[0])it.photo=await up(f.files[0]);
+  D[cur].push(it);p=1;await save();show(cur);msg('Saqlandi. Saytda 1–2 daqiqadan keyin koʻrinadi.',1)}
+ catch(x){if(p)D[cur].pop();msg('Saqlanmadi: '+x.message+'. Sahifani yangilab, qayta urinib koʻring.');b.disabled=false}}
+async function del(id){if(!confirm('Oʻchirilsinmi?'))return;
+ if(cur=='teachers'&&D.articles.some(a=>a.teacherId==id))return msg('Avval bu oʻqituvchining maqolalarini oʻchiring.');
+ const old=D[cur];D[cur]=old.filter(x=>x.id!=id);
+ try{await save();msg('Oʻchirildi.',1)}catch(x){D[cur]=old;msg('Oʻchirilmadi: '+x.message)}list()}
+
+if(T)login();
+</script></body></html>
