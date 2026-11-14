@@ -237,5 +237,13 @@
    "photo": "img/1794632675966.jpg"
   }
  ],
- "students": []
+ "students": [
+  {
+   "id": 1794635839528,
+   "last": "Abdusalomova",
+   "first": "Gulhayot",
+   "group": "KK2501",
+   "photo": "img/1794635839528.jpg"
+  }
+ ]
 }
