@@ -226,7 +226,15 @@
    "photo": "img/1794900572048.jpg"
   }
  ],
- "articles": [],
+ "articles": [
+  {
+   "id": 1795236910292,
+   "teacherId": 1794551941460,
+   "type": "Maqola",
+   "title": "DEVELOPMENT OF AN OPTIMAL VARIANT OF THE ELISA METHOD FOR THE  DIAGNOSIS OF THE POTATO VIRUS X",
+   "journal": "SABRAO Journal of Breeding and Genetics"
+  }
+ ],
  "events": [
   {
    "id": 1795236592707,
