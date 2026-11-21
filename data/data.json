@@ -227,7 +227,15 @@
   }
  ],
  "articles": [],
- "events": [],
+ "events": [
+  {
+   "id": 1795236592707,
+   "date": "2026-11-20",
+   "title": "Amaliy loyiha — ilmiy muhokamada",
+   "text": "UBS Toşkent filialida Aniq va tabiiy fanlar kafedrasi mudiri (PhD) Ş.K. Samandarovning sement va beton sifatini oşirib, tannarxini kamaytirişga qaratilgan amaliy loyihasi yuzasidan ilmiy seminar ötkazildi. \nUşbu işlanma Oliy ta’lim, fan va innovatsiyalar vazirligi huzuridagi Innovatsion rivojlaniş agentligining Ilmiy-texnik kengaşiga taqdim etiş uçun tayyorlanmoqda. \nSeminarda professor-öqituvçilar va mutaxassislar loyihaning ilmiy ahamiyati hamda işlab çiqarişdagi samaradorligini körib çiqib, uni takomillaştiriş yuzasidan tavsiyalar berdilar.",
+   "photo": "img/1795236592708.jpg"
+  }
+ ],
  "students": [
   {
    "id": 1794635839528,
